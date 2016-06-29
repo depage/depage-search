@@ -7,8 +7,8 @@
     ],
     "require": {
         "php": " >= 5.5",
-        "depage/http": "*@dev",
-        "depage/db": "*@dev"
+        "depage/http": "dev-master",
+        "depage/db": "dev-master"
     },
     "autoload": {
         "psr-4": { "Depage\\Search\\": "" }
