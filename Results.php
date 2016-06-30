@@ -23,6 +23,11 @@ class Results implements \Iterator
      **/
     protected $results = [];
 
+    /**
+     * @brief excerptLength
+     **/
+    protected $excerptLength = 300;
+
     // {{{ __construct()
     /**
      * @brief __construct
@@ -30,11 +35,38 @@ class Results implements \Iterator
      * @param mixed $results
      * @return void
      **/
-    public function __construct($results, $maxCount = null)
+    public function __construct($query, $results, $maxCount = null)
     {
+        $this->query = $query;
         $this->results = $results;
         $this->position = 0;
         $this->maxCount = $maxCount;
+
+        $words = explode(" ", $query);
+
+        foreach($this->results as $key => &$result) {
+            if (!empty($result->description)) {
+                $description = $result->description;
+            } else {
+                $description = $result->content;
+            }
+            if (strlen($description) > $this->excerptLength) {
+                $resultPos = mb_strpos(strtolower($description), $words[0]);
+                if ($resultPos > $this->excerptLength / 2) {
+                    $resultPos -= 30;
+                    $description = "..." . mb_substr($description, $resultPos, $this->excerptLength) . "...";
+                } else {
+                    $description = mb_substr($description, 0, $this->excerptLength) . "...";
+                }
+            }
+
+            for ($i = 0; $i < count($words); $i++) {
+                $word = preg_quote($words[$i]);
+                $description = preg_replace("/($word)/iu", "<b>$1</b>", $description);
+            }
+
+            $result->excerpt = $description;
+        }
     }
     // }}}
 
@@ -103,6 +135,25 @@ class Results implements \Iterator
     public function getMaxCount()
     {
         return $this->maxCount;
+    }
+    // }}}
+
+    // {{{ getHtml()
+    /**
+     * @brief getHtml
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getHtml()
+    {
+        $html = new \Depage\Html\Html("Results.tpl", [
+            "results" => $this,
+        ], [
+            "template_path" => __DIR__ . "/tpl/",
+        ]);
+
+        return (string) $html;
     }
     // }}}
 }

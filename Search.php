@@ -40,13 +40,13 @@ class Search
      * @param mixed $
      * @return void
      **/
-    public function query($search, $start = 0, $count = 20)
+    public function query($query, $start = 0, $count = 20)
     {
-        if (!empty($search)) {
-            $results = $this->db->query($search, $start, $count);
-            $maxCount = $this->db->queryCount($search);
+        if (!empty($query)) {
+            $results = $this->db->query($query, $start, $count);
+            $maxCount = $this->db->queryCount($query);
 
-            return new Results($results, $maxCount);
+            return new Results($query, $results, $maxCount);
         } else {
             return [];
         }
