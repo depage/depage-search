@@ -92,12 +92,15 @@ class Pdo
      **/
     public function query($search, $start = 0, $count = 20)
     {
+        // @todo add direct match through metaphone only if there are not enough results
+        // @todo split words for metaphone
         $query = $this->pdo->prepare(
-            "SELECT *,
+            "SELECT url, title, description, content,
                 MATCH (title, description, headlines, content) AGAINST (:search1 IN NATURAL LANGUAGE MODE) as score
             FROM {$this->table}
                 WHERE MATCH (title, description, headlines, content) AGAINST (:search2 IN NATURAL LANGUAGE MODE)
                 OR metaphone LIKE :metaphone
+            ORDER BY score DESC
             LIMIT :start, :count"
         );
         $query->execute([
@@ -109,6 +112,29 @@ class Pdo
         ]);
 
         return $query->fetchAll(\PDO::FETCH_OBJ);
+    }
+    // }}}
+    // {{{ queryCount()
+    /**
+     * @brief query
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public function queryCount($search)
+    {
+        $query = $this->pdo->prepare(
+            "SELECT COUNT(*) AS count
+            FROM {$this->table}
+                WHERE MATCH (title, description, headlines, content) AGAINST (:search IN NATURAL LANGUAGE MODE)
+                OR metaphone LIKE :metaphone"
+        );
+        $query->execute([
+            'search' => $search,
+            'metaphone' => "%" . $this->metaphone($search) . "%",
+        ]);
+
+        return $query->fetchObject()->count;
     }
     // }}}
 

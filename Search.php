@@ -32,14 +32,14 @@ class Search
     {
         if (!empty($search)) {
             $results = $this->db->query($search, $start, $count);
+            $maxCount = $this->db->queryCount($search);
 
-            return $results;
+            return new Results($results, $maxCount);
         } else {
             return [];
         }
     }
     // }}}
 }
-
 
 /* vim:set ft=php sw=4 sts=4 fdm=marker et : */
