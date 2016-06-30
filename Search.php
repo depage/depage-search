@@ -21,6 +21,18 @@ class Search
     }
     // }}}
 
+    // {{{ setUrlFilter()
+    /**
+     * @brief setUrlFilter
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public function setUrlFilter($filter)
+    {
+        $this->db->setUrlFilter($filter);
+    }
+    // }}}
     // {{{ query()
     /**
      * @brief query

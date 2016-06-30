@@ -20,6 +20,12 @@ class Pdo
             FULLTEXT KEY `content` (`title`,`description`,`headlines`,`content`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
      */
+
+    /**
+     * @brief urlFilter
+     **/
+    protected $urlFilter = "";
+
     // {{{ __construct()
     /**
      * @brief __construct
@@ -31,6 +37,24 @@ class Pdo
     {
         $this->pdo = $pdo;
         $this->table = $pdo->prefix . "_search";
+    }
+    // }}}
+
+    // {{{ setUrlFilter()
+    /**
+     * @brief setUrlFilter
+     *
+     * @param mixed $filter
+     * @return void
+     **/
+    public function setUrlFilter($filter)
+    {
+        if (!empty($filter)) {
+            $url = $this->pdo->quote($filter . "%");
+            $this->urlFilter = " url LIKE $url AND";
+        } else {
+            $this->urlFilter = "";
+        }
     }
     // }}}
 
@@ -94,12 +118,23 @@ class Pdo
     {
         // @todo add direct match through metaphone only if there are not enough results
         // @todo split words for metaphone
+        $query =
+            "SELECT url, title, description, content,
+                MATCH (title, description, headlines, content) AGAINST (:search1 IN NATURAL LANGUAGE MODE) as score
+            FROM {$this->table}
+            WHERE $this->urlFilter
+                (MATCH (title, description, headlines, content) AGAINST (:search2 IN NATURAL LANGUAGE MODE)
+                OR metaphone LIKE :metaphone)
+            ORDER BY score DESC
+            LIMIT :start, :count";
+
         $query = $this->pdo->prepare(
             "SELECT url, title, description, content,
                 MATCH (title, description, headlines, content) AGAINST (:search1 IN NATURAL LANGUAGE MODE) as score
             FROM {$this->table}
-                WHERE MATCH (title, description, headlines, content) AGAINST (:search2 IN NATURAL LANGUAGE MODE)
-                OR metaphone LIKE :metaphone
+            WHERE $this->urlFilter
+                (MATCH (title, description, headlines, content) AGAINST (:search2 IN NATURAL LANGUAGE MODE)
+                OR metaphone LIKE :metaphone)
             ORDER BY score DESC
             LIMIT :start, :count"
         );
@@ -126,8 +161,9 @@ class Pdo
         $query = $this->pdo->prepare(
             "SELECT COUNT(*) AS count
             FROM {$this->table}
-                WHERE MATCH (title, description, headlines, content) AGAINST (:search IN NATURAL LANGUAGE MODE)
-                OR metaphone LIKE :metaphone"
+            WHERE $this->urlFilter
+                (MATCH (title, description, headlines, content) AGAINST (:search IN NATURAL LANGUAGE MODE)
+                OR metaphone LIKE :metaphone)"
         );
         $query->execute([
             'search' => $search,
