@@ -165,9 +165,14 @@ class Indexer
 
         $this->contentNodes = new \SplObjectStorage();
 
-        $this->xpath = new \DOMXPath($this->doc);
+        //@todo if $doc is DOMDocument
+        if (is_a($this->doc, "DOMDocument")) {
+            $this->xpath = new \DOMXPath($this->doc);
 
-        $this->extractContentNodes();
+            $this->extractContentNodes();
+        } else {
+            error_log("parse error for $url");
+        }
 
         return $this;
     }
