@@ -26,7 +26,7 @@ class Results implements \Iterator
     /**
      * @brief excerptLength
      **/
-    protected $excerptLength = 300;
+    protected $excerptLength = 200;
 
     // {{{ __construct()
     /**
