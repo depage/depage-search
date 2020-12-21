@@ -26,6 +26,12 @@ class Pdo
      **/
     protected $urlFilter = "";
 
+    /**
+     * @brief searchMode
+     **/
+    //protected $searchMode = "IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION";
+    protected $searchMode = "IN NATURAL LANGUAGE MODE";
+
     // {{{ __construct()
     /**
      * @brief __construct
@@ -118,16 +124,7 @@ class Pdo
     {
         // @todo add direct match through metaphone only if there are not enough results
         // @todo split words for metaphone
-        $query =
-            "SELECT url, title, description, content,
-                MATCH (title, description, headlines, content) AGAINST (:search1 IN NATURAL LANGUAGE MODE) as score
-            FROM {$this->table}
-            WHERE $this->urlFilter
-                (MATCH (title, description, headlines, content) AGAINST (:search2 IN NATURAL LANGUAGE MODE)
-                OR metaphone LIKE :metaphone)
-            ORDER BY score DESC
-            LIMIT :start, :count";
-
+        /*
         $query = $this->pdo->prepare(
             "SELECT url, title, description, content,
                 MATCH (title, description, headlines, content) AGAINST (:search1 IN NATURAL LANGUAGE MODE) as score
@@ -138,10 +135,20 @@ class Pdo
             ORDER BY score DESC
             LIMIT :start, :count"
         );
+         */
+        $query = $this->pdo->prepare(
+            "SELECT url, title, description, content,
+                MATCH (title, description, headlines, content) AGAINST (:search1 {$this->searchMode}) as score
+            FROM {$this->table}
+            WHERE $this->urlFilter
+                MATCH (title, description, headlines, content) AGAINST (:search2 {$this->searchMode})
+            ORDER BY score DESC
+            LIMIT :start, :count"
+        );
         $query->execute([
             'search1' => $search,
             'search2' => $search,
-            'metaphone' => "%" . $this->metaphone($search) . "%",
+            //'metaphone' => "%" . $this->metaphone($search) . "%",
             'start' => $start,
             'count' => $count,
         ]);
@@ -158,16 +165,24 @@ class Pdo
      **/
     public function queryCount($search)
     {
+        /*
         $query = $this->pdo->prepare(
             "SELECT COUNT(*) AS count
             FROM {$this->table}
             WHERE $this->urlFilter
-                (MATCH (title, description, headlines, content) AGAINST (:search IN NATURAL LANGUAGE MODE)
+                (MATCH (title, description, headlines, content) AGAINST (:search {$this->searchMode})
                 OR metaphone LIKE :metaphone)"
+        );
+         */
+        $query = $this->pdo->prepare(
+            "SELECT COUNT(*) AS count
+            FROM {$this->table}
+            WHERE $this->urlFilter
+                (MATCH (title, description, headlines, content) AGAINST (:search {$this->searchMode}))"
         );
         $query->execute([
             'search' => $search,
-            'metaphone' => "%" . $this->metaphone($search) . "%",
+            //'metaphone' => "%" . $this->metaphone($search) . "%",
         ]);
 
         return $query->fetchObject()->count;

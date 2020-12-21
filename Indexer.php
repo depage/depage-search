@@ -365,6 +365,27 @@ class Indexer
         return $this->links;
     }
     // }}}
+
+    // {{{ updateSchema()
+    /**
+     * @brief updateSchema
+     *
+     * @param mixed $pdo
+     * @return void
+     **/
+    public static function updateSchema($pdo)
+    {
+        $schema = new \Depage\Db\Schema($pdo);
+
+        $schema->setReplace(
+            function ($tableName) use ($pdo) {
+                return $pdo->prefix . $tableName;
+            }
+        );
+        $schema->loadGlob(__DIR__ . "/Sql/*.sql");
+        $schema->update();
+    }
+    // }}}
 }
 
 /* vim:set ft=php sw=4 sts=4 fdm=marker et : */
