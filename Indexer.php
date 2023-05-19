@@ -19,7 +19,7 @@ class Indexer
     /**
      * @brief xpathExcluded
      **/
-    protected $xpathExcluded = "//script";
+    protected $xpathExcluded = "//script | //*[@data-search-index='noindex']";
 
     /**
      * @brief xpathTitle
