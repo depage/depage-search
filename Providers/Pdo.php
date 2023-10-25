@@ -117,7 +117,7 @@ class Pdo
             FROM {$this->table}
             WHERE $this->urlFilter
                 MATCH (title, description, headlines, content) AGAINST (:search2 {$this->searchMode})
-            ORDER BY score DESC
+            ORDER BY score DESC, priority DESC, lastModified DESC
             LIMIT :start, :count"
         );
         $query->execute([
