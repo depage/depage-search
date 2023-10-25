@@ -19,7 +19,7 @@ class Indexer
     /**
      * @brief xpathExcluded
      **/
-    protected $xpathExcluded = "//script";
+    protected $xpathExcluded = "//script | //*[@data-search-index='noindex']";
 
     /**
      * @brief xpathTitle
@@ -56,6 +56,16 @@ class Indexer
      * @brief xpathLinks
      **/
     protected $xpathLinks = ".//a/@href";
+
+    /**
+     * @brief xpathLastModified
+     **/
+    protected $xpathLastModified = "/html/head/meta[@property = 'article:modified_time']/@content";
+
+    /**
+     * @brief xpathPublished
+     **/
+    protected $xpathPublished = "/html/head/meta[@property = 'article:published_time']/@content";
 
     /**
      * @brief contentNodes
@@ -125,8 +135,10 @@ class Indexer
         $description = $this->getDescription();
         $headlines = $this->getHeadlines();
         $content = $this->getContent();
+        $lastModified = $this->getLastModified();
+        $published = $this->getPublished();
 
-        $this->db->add($url, $title, $description, $headlines, $content);
+        $this->db->add($url, $title, $description, $headlines, $content, $lastModified, $published);
 
         return $this;
     }
@@ -153,6 +165,8 @@ class Indexer
     public function load($url)
     {
         $request = new Request($url);
+        //$request->allowUnsafeSSL = true;
+
         $response = $request->execute();
         $this->doc = $response->getXml();
 
@@ -163,9 +177,11 @@ class Indexer
         $this->images = [];
         $this->links = [];
 
+        $this->lastModified = $response->getLastModified();
+        $this->published = $response->getLastModified();
+
         $this->contentNodes = new \SplObjectStorage();
 
-        //@todo if $doc is DOMDocument
         if (is_a($this->doc, "DOMDocument")) {
             $this->xpath = new \DOMXPath($this->doc);
 
@@ -221,7 +237,7 @@ class Indexer
     protected function cleanContent($content)
     {
         $content = implode(" ", $content);
-        $content = preg_replace('/[\s\r\n]+/m', ' ', $content);
+        $content = preg_replace('/[\s\r\n]+/mu', ' ', $content);
         $content = trim($content);
 
         return $content;
@@ -363,6 +379,38 @@ class Indexer
         // @todo update relative image paths to be dependent on base or on current url
 
         return $this->links;
+    }
+    // }}}
+    // {{{ getLastModified()
+    /**
+     * @brief getLastModified
+     *
+     * @return void
+     **/
+    public function getLastModified()
+    {
+        $nodes = $this->xpath->query($this->xpathLastModified);
+        foreach ($nodes as $node) {
+            $this->lastModified = new \DateTimeImmutable($node->value);
+        }
+
+        return $this->lastModified->format('Y-m-d H:i:s');
+    }
+    // }}}
+    // {{{ getPublished()
+    /**
+     * @brief getPublished
+     *
+     * @return void
+     **/
+    public function getPublished()
+    {
+        $nodes = $this->xpath->query($this->xpathPublished);
+        foreach ($nodes as $node) {
+            $this->published = new \DateTimeImmutable($node->value);
+        }
+
+        return $this->published->format('Y-m-d H:i:s');
     }
     // }}}
 

@@ -58,7 +58,7 @@ class Pdo
      * @param mixed $param
      * @return void
      **/
-    public function add($url, $title, $description, $headlines, $content)
+    public function add($url, $title, $description, $headlines, $content, $lastModfied, $published)
     {
         $query = $this->pdo->prepare(
             "INSERT {$this->table}
@@ -68,6 +68,9 @@ class Pdo
                 description = :description,
                 headlines = :headlines,
                 content = :content,
+                lastModified = :lastModified,
+                lastPublished = :published
+            ON DUPLICATE KEY UPDATE title=VALUES(title), description=VALUES(description), headlines=VALUES(headlines), content=VALUES(content)"
         );
         $query->execute([
             'url' => $url,
@@ -75,6 +78,8 @@ class Pdo
             'description' => $description,
             'headlines' => $headlines,
             'content' => $content,
+            'lastModified' => $lastModfied,
+            'published' => $published,
         ]);
     }
     // }}}
