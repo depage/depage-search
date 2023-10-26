@@ -19,12 +19,12 @@ class Indexer
     /**
      * @brief xpathExcluded
      **/
-    protected $xpathExcluded = "//script | //*[@data-search-index='noindex']";
+    protected $xpathExcluded = "//script | //nav | //*[@data-search-index='noindex']";
 
     /**
      * @brief xpathTitle
      **/
-    protected $xpathTitle = "/html/head/title";
+    protected $xpathTitle = "/html/head/title//text()";
 
     /**
      * @brief xpathDescription
@@ -34,18 +34,17 @@ class Indexer
     /**
      * @brief xpathHeadlines
      **/
-    protected $xpathHeadlines = ".//h1 | .//h2 | .//h3 | .//h4 | .//h5 | .//h6";
+    protected $xpathHeadlines = ".//h1//text() | .//h2//text() | .//h3//text() | .//h4//text() | .//h5//text() | .//h6//text()";
 
     /**
      * @brief xpathContent
      **/
-    //protected $xpathContent = ".//article[not(ancestor::main) and not(ancestor::section)] | .//section[not(ancestor::main) and not(ancestor::article)] | .//main";
     protected $xpathContent = ".//article | .//section | .//main";
 
     /**
      * @brief xpathImgAlt
      **/
-    protected $xpathImgAlt = ".//img/@alt";
+    protected $xpathImgAlt = ".//img/@alt | .//img/@title";
 
     /**
      * @brief xpathImages
@@ -255,7 +254,7 @@ class Indexer
         // extract title
         $nodes = $this->xpath->query($this->xpathTitle);
         foreach ($nodes as $node) {
-            $this->title[] = $node->textContent;
+            $this->title[] = $node->nodeValue;
         }
 
         return $this->cleanContent($this->title);
@@ -273,7 +272,7 @@ class Indexer
         // extract description
         $nodes = $this->xpath->query($this->xpathDescription);
         foreach ($nodes as $node) {
-            $this->description[] = $node->value;
+            $this->description[] = $node->nodeValue;
         }
 
         return $this->cleanContent($this->description);
@@ -291,7 +290,7 @@ class Indexer
             // search for headline
             $nodes = $this->xpath->query($this->xpathHeadlines, $contentNode);
             foreach ($nodes as $node) {
-                $this->headlines[] = $node->textContent;
+                $this->headlines[] = $node->nodeValue;
             }
         }
 
@@ -307,13 +306,19 @@ class Indexer
     public function getContent()
     {
         foreach ($this->contentNodes as $contentNode) {
-            $this->content[] = $contentNode->textContent;
+            // search for text nodes
+            $nodes = $this->xpath->query(".//text()", $contentNode);
+            foreach ($nodes as $node) {
+                if (!empty($node->nodeValue)) {
+                    $this->content[] = $node->nodeValue;
+                }
+            }
 
-            // search for image alt tags
+            // search for image alt/title tags
             $nodes = $this->xpath->query($this->xpathImgAlt, $contentNode);
             foreach ($nodes as $node) {
-                if (!empty($node->value)) {
-                    $this->content[] = $node->value;
+                if (!empty($node->nodeValue)) {
+                    $this->content[] = $node->nodeValue;
                 }
             }
         }
@@ -335,7 +340,7 @@ class Indexer
             // extract images
             $nodes = $this->xpath->query($this->xpathImages, $contentNode);
             foreach ($nodes as $node) {
-                $src = $node->value;
+                $src = $node->nodeValue;
                 if (preg_match_all("/([^ ]+) [^ ]+,?/", $src, $matches)) {
                     foreach ($matches[1] as $img) {
                         $images[] = $img;
@@ -367,7 +372,7 @@ class Indexer
             // extract links
             $nodes = $this->xpath->query($this->xpathLinks, $contentNode);
             foreach ($nodes as $node) {
-                $href = $node->value;
+                $href = $node->nodeValue;
                 if (!empty($href)) {
                     $links[] = $href;
                 }
@@ -391,7 +396,7 @@ class Indexer
     {
         $nodes = $this->xpath->query($this->xpathLastModified);
         foreach ($nodes as $node) {
-            $this->lastModified = new \DateTimeImmutable($node->value);
+            $this->lastModified = new \DateTimeImmutable($node->nodeValue);
         }
 
         return $this->lastModified->format('Y-m-d H:i:s');
@@ -407,7 +412,7 @@ class Indexer
     {
         $nodes = $this->xpath->query($this->xpathPublished);
         foreach ($nodes as $node) {
-            $this->published = new \DateTimeImmutable($node->value);
+            $this->published = new \DateTimeImmutable($node->nodeValue);
         }
 
         return $this->published->format('Y-m-d H:i:s');
