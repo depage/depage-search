@@ -70,7 +70,14 @@ class Pdo
                 content = :content,
                 lastModified = :lastModified,
                 lastPublished = :published
-            ON DUPLICATE KEY UPDATE title=VALUES(title), description=VALUES(description), headlines=VALUES(headlines), content=VALUES(content)"
+            ON DUPLICATE KEY UPDATE
+                title=VALUES(title),
+                description=VALUES(description),
+                headlines=VALUES(headlines),
+                content=VALUES(content),
+                lastModified=VALUES(lastModified),
+                lastPublished=VALUES(lastPublished)
+            "
         );
         $query->execute([
             'url' => $url,
