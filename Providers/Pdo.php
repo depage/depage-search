@@ -34,6 +34,12 @@ class Pdo
      **/
     protected $prio2 = 1;
 
+    public $modes = [
+        "by-relevance-and-date",
+        "by-relevance",
+        "by-date",
+    ];
+
     // {{{ __construct()
     /**
      * @brief __construct
@@ -131,8 +137,22 @@ class Pdo
      * @param mixed $
      * @return void
      **/
-    public function query($search, $start = 0, $count = 20)
+    public function query($search, $start = 0, $count = 20, $mode = null)
     {
+        $orderBy = "
+            (score1 * {$this->prio1} + score2 * {$this->prio2})
+            * (priority + 0.1)
+            * (1 / (dateDiff + 0.1))
+        ";
+
+        if ($mode == "by-relevance") {
+            $orderBy = "
+                (score1 * {$this->prio1} + score2 * {$this->prio2})
+                * (priority + 0.1)
+            ";
+        } else if ($mode == "by-date") {
+            $orderBy = "lastPublished";
+        }
         $query = $this->pdo->prepare(
             "SELECT
                 url,
@@ -153,9 +173,7 @@ class Pdo
                 )
             ORDER BY
                 (
-                    (score1 * {$this->prio1} + score2 * {$this->prio2})
-                    * (priority + 0.1)
-                    * (1 / (dateDiff + 0.1))
+                    $orderBy
                 ) DESC
             LIMIT :start, :count"
         );
