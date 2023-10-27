@@ -18,6 +18,21 @@ class Pdo
      **/
     //protected $searchMode = "IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION";
     protected $searchMode = "IN NATURAL LANGUAGE MODE";
+    //protected $searchMode = "IN BOOLEAN MODE";
+
+    /**
+     * @brief prio1
+     *
+     * Priority for title and headlines
+     **/
+    protected $prio1 = 10;
+
+    /**
+     * @brief prio2
+     *
+     * Priority for content
+     **/
+    protected $prio2 = 1;
 
     // {{{ __construct()
     /**
@@ -119,17 +134,36 @@ class Pdo
     public function query($search, $start = 0, $count = 20)
     {
         $query = $this->pdo->prepare(
-            "SELECT url, title, description, content,
-                MATCH (title, description, headlines, content) AGAINST (:search1 {$this->searchMode}) as score
+            "SELECT
+                url,
+                title,
+                description,
+                content,
+                priority,
+                lastModified,
+                lastPublished,
+                MATCH (title, headlines) AGAINST (:search1 {$this->searchMode}) as score1,
+                MATCH (description, content) AGAINST (:search2 {$this->searchMode}) as score2,
+                ABS(DATEDIFF(NOW(), lastPublished)) as dateDiff
             FROM {$this->table}
             WHERE $this->urlFilter
-                MATCH (title, description, headlines, content) AGAINST (:search2 {$this->searchMode})
-            ORDER BY score DESC, priority DESC, lastModified DESC
+                (
+                    MATCH (title, headlines) AGAINST (:search3 {$this->searchMode}) OR
+                    MATCH (description, content) AGAINST (:search4 {$this->searchMode})
+                )
+            ORDER BY
+                (
+                    (score1 * {$this->prio1} + score2 * {$this->prio2})
+                    * (priority + 0.1)
+                    * (1 / (dateDiff + 0.1))
+                ) DESC
             LIMIT :start, :count"
         );
         $query->execute([
             'search1' => $search,
             'search2' => $search,
+            'search3' => $search,
+            'search4' => $search,
             'start' => $start,
             'count' => $count,
         ]);
@@ -150,10 +184,14 @@ class Pdo
             "SELECT COUNT(*) AS count
             FROM {$this->table}
             WHERE $this->urlFilter
-                (MATCH (title, description, headlines, content) AGAINST (:search {$this->searchMode}))"
+                (
+                    MATCH (title, headlines) AGAINST (:search1 {$this->searchMode}) OR
+                    MATCH (description, content) AGAINST (:search2 {$this->searchMode})
+                )"
         );
         $query->execute([
-            'search' => $search,
+            'search1' => $search,
+            'search2' => $search,
         ]);
 
         return $query->fetchObject()->count;

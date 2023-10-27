@@ -24,3 +24,11 @@ ALTER TABLE `_search`
   ADD COLUMN `lastIndexed` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `lastPublished`,
   ADD COLUMN `priority` float DEFAULT 0.5 AFTER `content`
 ;
+
+/*
+  @version 1.2.0
+*/
+ALTER TABLE `_search`
+  ADD FULLTEXT KEY `contentP1` (`title`,`headlines`),
+  ADD FULLTEXT KEY `contentP2` (`description`,`content`)
+;
