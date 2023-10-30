@@ -42,7 +42,11 @@ class Results implements \Iterator
         $this->position = 0;
         $this->maxCount = $maxCount;
 
+        $query = trim(preg_replace('/[\s\r\n]+/mu', ' ', $query));
         $words = explode(" ", $query);
+        array_walk($words, function (&$word) {
+            $word = trim($word, " \n\r\t\v\x00+");
+        });
 
         foreach($this->results as $key => &$result) {
             if (!empty($result->description)) {
