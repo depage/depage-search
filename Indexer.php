@@ -27,6 +27,11 @@ class Indexer
     protected $xpathTitle = "/html/head/title//text()";
 
     /**
+     * @brief xpathOGTitle
+     **/
+    protected $xpathOGTitle = "/html/head/meta[@property = 'og:title']/@content";
+
+    /**
      * @brief xpathDescription
      **/
     protected $xpathDescription = "/html/head/meta[@name = 'description']/@content";
@@ -251,10 +256,18 @@ class Indexer
      **/
     public function getTitle()
     {
-        // extract title
-        $nodes = $this->xpath->query($this->xpathTitle);
+        // extract title from og:title first
+        $nodes = $this->xpath->query($this->xpathOGTitle);
         foreach ($nodes as $node) {
             $this->title[] = $node->nodeValue;
+        }
+
+        if (empty($this->cleanContent($this->title))) {
+            // extract title normal html title
+            $nodes = $this->xpath->query($this->xpathTitle);
+            foreach ($nodes as $node) {
+                $this->title[] = $node->nodeValue;
+            }
         }
 
         return $this->cleanContent($this->title);
