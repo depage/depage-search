@@ -17,8 +17,8 @@ class Pdo
      * @brief searchMode
      **/
     //protected $searchMode = "IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION";
-    protected $searchMode = "IN NATURAL LANGUAGE MODE";
-    //protected $searchMode = "IN BOOLEAN MODE";
+    //protected $searchMode = "IN NATURAL LANGUAGE MODE";
+    protected $searchMode = "IN BOOLEAN MODE";
 
     /**
      * @brief prio1
